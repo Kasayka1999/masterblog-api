@@ -1,0 +1,169 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Masterblog API",
+    "version": "1.0.0"
+  },
+  "host": "localhost:5002",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "Post",
+      "description": "Post API - CRUD"
+    }
+  ],
+  "paths": {
+    "/api/posts": {
+      "get": {
+        "summary": "Get all posts (optionally sorted)",
+        "tags": ["Post"],
+        "parameters": [
+          {
+            "name": "sort",
+            "in": "query",
+            "type": "string",
+            "enum": ["title", "content"],
+            "description": "Field to sort by (title or content)"
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "type": "string",
+            "enum": ["asc", "desc"],
+            "description": "Sort direction (ascending or descending)"
+          }
+        ],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "List of posts"
+          },
+          "400": {
+            "description": "Invalid sorting field"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new post",
+        "tags": ["Post"],
+        "consumes": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Post object",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["title", "content"],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Post created successfully"
+          },
+          "401": {
+            "description": "Missing or invalid data"
+          }
+        }
+      }
+    },
+    "/api/posts/{post_id}": {
+      "put": {
+        "summary": "Update a post by ID",
+        "tags": ["Post"],
+        "consumes": ["application/json"],
+        "parameters": [
+          {
+            "name": "post_id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID of the post to update"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Updated post data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post updated successfully"
+          },
+          "404": {
+            "description": "Post not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a post by ID",
+        "tags": ["Post"],
+        "parameters": [
+          {
+            "name": "post_id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID of the post to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post deleted successfully"
+          },
+          "404": {
+            "description": "Post not found"
+          }
+        }
+      }
+    },
+    "/api/posts/search": {
+      "get": {
+        "summary": "Search posts by title or content",
+        "tags": ["Post"],
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "type": "string",
+            "description": "Search by title"
+          },
+          {
+            "name": "content",
+            "in": "query",
+            "type": "string",
+            "description": "Search by content"
+          }
+        ],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Filtered list of posts"
+          }
+        }
+      }
+    }
+  }
+}
