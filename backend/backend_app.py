@@ -1,3 +1,5 @@
+import json
+
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -7,10 +9,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
 
-POSTS = [
-    {"id": 1, "title": "First post", "content": "This is the first post."},
-    {"id": 2, "title": "Second post", "content": "This is the second post."},
-]
+posts_url = "data/posts_data.json"
 
 SWAGGER_URL="/api/docs"  # (1) swagger endpoint e.g. HTTP://localhost:5002/api/docs
 API_URL="/static/masterblog.json" # (2) ensure you create this dir and file
@@ -24,42 +23,58 @@ swagger_ui_blueprint = get_swaggerui_blueprint(
 )
 app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
+
+def load_file():
+    with open(posts_url, "r") as post_data:
+        posts_data = json.load(post_data)
+        return posts_data
+
+def save_file(posts):
+    with open(posts_url, "w") as post_data:
+        json.dump(posts, post_data, indent=2)
+
 def validate_post_data(new_data):
     if "title" not in new_data or "content" not in new_data:
         return False
     return True
 
 def delete_post(post_id):
-    for index, post in enumerate(POSTS):
+    posts = load_file()
+    for index, post in enumerate(posts):
         if post["id"] == post_id:
-            POSTS.pop(index)
+            posts.pop(index)
+            save_file(posts)
+            break
 
 def validate_post_id(post_id):
-    post_ids = {post["id"] for post in POSTS}
+    posts = load_file()
+    post_ids = {post["id"] for post in posts}
     if post_id not in post_ids:
         return False
     return True
 
 def update_post(post_id, new_data):
+    posts = load_file()
     if "title" in new_data:
-        for post in POSTS:
+        for post in posts:
             if post["id"] == post_id:
                 post["title"] = new_data["title"]
     if "content" in new_data:
-        for post in POSTS:
+        for post in posts:
             if post["id"] == post_id:
                 post["content"] = new_data["content"]
-
+    save_file(posts)
 
 
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
+    posts = load_file()
     sort = request.args.get('sort')
     direction = request.args.get('direction', 'asc')
 
     allowed_fields = ["content", "title"]
 
-    sorted_posts = POSTS
+    sorted_posts = posts
 
     if sort:
         if sort not in allowed_fields:
@@ -72,10 +87,11 @@ def get_posts():
         return jsonify(sorted_posts)
 
     if not sort:
-        return jsonify(POSTS)
+        return jsonify(posts)
 
 @app.route('/api/posts', methods=['POST'])
 def add():
+    posts = load_file()
     if request.method == "POST":
         new_post = request.get_json()
 
@@ -85,7 +101,7 @@ def add():
         if not validate_post_data(new_post):
             return jsonify({"error": "missing or wrong data"}), 401
 
-        post_ids = {post["id"] for post in POSTS}
+        post_ids = {post["id"] for post in posts}
         unique_id = 0
 
         while unique_id in post_ids:
@@ -97,7 +113,8 @@ def add():
             "content": content
         }
 
-        POSTS.append(new_data)
+        posts.append(new_data)
+        save_file(posts)
         return jsonify(new_data), 201
 
 @app.route('/api/posts/<int:post_id>', methods=['DELETE'])
@@ -120,13 +137,14 @@ def update(post_id):
 
 @app.route('/api/posts/search', methods=['GET'])
 def search():
+    posts = load_file()
     if request.method == "GET":
         title = request.args.get('title')
         content = request.args.get('content')
 
         filtered = []
 
-        for post in POSTS:
+        for post in posts:
             post_title = post.get('title', '').lower() # case-sensetive
             post_content = post.get('content', '').lower()
 
