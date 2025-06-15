@@ -1,5 +1,5 @@
 import json
-
+import os
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -25,13 +25,27 @@ app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
 
 def load_file():
-    with open(posts_url, "r") as post_data:
-        posts_data = json.load(post_data)
-        return posts_data
+    if not os.path.exists(posts_url):
+        # Create the file if it doesn't exist
+        with open(posts_url, "w") as f:
+            json.dump([], f)
+
+    try:
+        with open(posts_url, "r") as post_data:
+            return json.load(post_data)
+    except json.JSONDecodeError:
+        # File exists but is not valid JSON
+        return []
+    except Exception as e:
+        print(f"Error reading from {posts_url}: {e}")
+        return []
 
 def save_file(posts):
-    with open(posts_url, "w") as post_data:
-        json.dump(posts, post_data, indent=2)
+    try:
+        with open(posts_url, "w") as post_data:
+            json.dump(posts, post_data, indent=2)
+    except Exception as e:
+        print(f"Error writing to {posts_url}: {e}")
 
 def validate_post_data(new_data):
     if "title" not in new_data or "content" not in new_data:
